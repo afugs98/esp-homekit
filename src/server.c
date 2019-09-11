@@ -3076,7 +3076,7 @@ client_context_t *homekit_server_accept_client(homekit_server_t *server) {
     const int yes = 1; /* enable sending keepalive probes for socket */
     setsockopt(s, SOL_SOCKET, SO_KEEPALIVE, &yes, sizeof(yes));
 
-    const int idle = 180; /* 180 sec iddle before start sending probes */
+    const int idle = 180; /* 180 sec idle before start sending probes */
     setsockopt(s, IPPROTO_TCP, TCP_KEEPIDLE, &idle, sizeof(idle));
 
     const int interval = 30; /* 30 sec between probes */
@@ -3447,7 +3447,12 @@ void homekit_server_init(homekit_server_config_t *config) {
     homekit_server_t *server = server_new();
     server->config = config;
 
-    xTaskCreate(homekit_server_task, "HomeKit Server", SERVER_TASK_STACK, server, 1, NULL);
+    if (pdPASS != xTaskCreate(homekit_server_task, "HomeKit Server",
+                              SERVER_TASK_STACK, server, 1, NULL)) {
+        ERROR("Error initializing HomeKit accessory server: "
+              "failed to start a server task");
+        server_free(server);
+    }
 }
 
 void homekit_server_reset() {
